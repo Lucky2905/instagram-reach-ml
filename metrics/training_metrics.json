@@ -1,0 +1,17 @@
+[
+  {
+    "event_type": "TRAINING_START",
+    "timestamp": 1780120147.1781986,
+    "strategy": "standardize",
+    "test_size": 0.2,
+    "random_state": 42.0
+  },
+  {
+    "event_type": "TRAINING_COMPLETE",
+    "timestamp": 1780120152.5232089,
+    "r2": 0.8775,
+    "mae": 9935.39,
+    "accuracy": 0.873,
+    "strategy": "standardize"
+  }
+]

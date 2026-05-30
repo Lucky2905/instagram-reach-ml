@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Reach ML — Dashboard</title>
+  <meta name="description" content="Predict and classify Instagram post reach using machine learning. Upload a CSV to visualize predictions, feature importance, and tier distribution." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ── Sidebar Navigation ─────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">📊</div>
+    <span class="logo-text">ReachML</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#section-predict" class="nav-item active" id="nav-predict">
+      <span class="nav-icon">🔮</span><span>Predict</span>
+    </a>
+    <a href="#section-upload" class="nav-item" id="nav-upload">
+      <span class="nav-icon">📁</span><span>Batch Upload</span>
+    </a>
+    <a href="#section-charts" class="nav-item" id="nav-charts">
+      <span class="nav-icon">📈</span><span>Analytics</span>
+    </a>
+    <a href="#section-metrics" class="nav-item" id="nav-metrics">
+      <span class="nav-icon">🏆</span><span>Metrics</span>
+    </a>
+  </nav>
+  <div class="sidebar-status" id="sidebarStatus">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Checking…</span>
+  </div>
+</aside>
+
+<!-- ── Main Content ───────────────────────────────────────────── -->
+<main class="main-content">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Instagram Reach Predictor</h1>
+      <p class="page-subtitle">ML-powered reach prediction & tier classification</p>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-blue">Linear Regression</span>
+      <span class="badge badge-purple">Random Forest</span>
+      <span class="badge badge-pink">4 Design Patterns</span>
+    </div>
+  </header>
+
+  <!-- ── Section: Single Prediction ──────────────────────────── -->
+  <section id="section-predict" class="section">
+    <div class="section-header">
+      <h2 class="section-title">🔮 Single Post Prediction</h2>
+      <p class="section-desc">Enter post details to predict reach and tier classification.</p>
+    </div>
+
+    <div class="card predict-grid">
+      <div class="form-group">
+        <label for="inp-likes">Likes</label>
+        <input id="inp-likes" type="number" class="form-input" value="1500" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="inp-comments">Comments</label>
+        <input id="inp-comments" type="number" class="form-input" value="80" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="inp-shares">Shares</label>
+        <input id="inp-shares" type="number" class="form-input" value="25" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="inp-saves">Saves</label>
+        <input id="inp-saves" type="number" class="form-input" value="60" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="inp-hashtags">Hashtag Count</label>
+        <input id="inp-hashtags" type="number" class="form-input" value="12" min="0" max="30" />
+      </div>
+      <div class="form-group">
+        <label for="inp-posttype">Post Type</label>
+        <select id="inp-posttype" class="form-input form-select">
+          <option value="reel">Reel</option>
+          <option value="video">Video</option>
+          <option value="image">Image</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="inp-hour">Hour of Day (0–23)</label>
+        <input id="inp-hour" type="number" class="form-input" value="19" min="0" max="23" />
+      </div>
+      <div class="form-group">
+        <label for="inp-day">Day of Week (0=Mon)</label>
+        <input id="inp-day" type="number" class="form-input" value="5" min="0" max="6" />
+      </div>
+      <div class="form-group">
+        <label for="inp-followers">Follower Count</label>
+        <input id="inp-followers" type="number" class="form-input" value="50000" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="inp-age">Account Age (days)</label>
+        <input id="inp-age" type="number" class="form-input" value="730" min="0" />
+      </div>
+      <div class="form-group form-group--full">
+        <button id="btn-predict" class="btn btn-primary" onclick="runSinglePredict()">
+          <span class="btn-icon">⚡</span> Predict Reach
+        </button>
+      </div>
+    </div>
+
+    <!-- Result Card -->
+    <div class="result-card" id="resultCard" style="display:none;">
+      <div class="result-metric">
+        <div class="result-label">Predicted Reach</div>
+        <div class="result-value" id="res-reach">—</div>
+      </div>
+      <div class="result-divider"></div>
+      <div class="result-metric">
+        <div class="result-label">Reach Tier</div>
+        <div class="result-value" id="res-tier">—</div>
+      </div>
+      <div class="result-divider"></div>
+      <div class="result-metric">
+        <div class="result-label">Confidence</div>
+        <div class="result-value" id="res-conf">—</div>
+      </div>
+    </div>
+
+    <div class="alert alert-error" id="predictError" style="display:none;"></div>
+  </section>
+
+  <!-- ── Section: Batch Upload ───────────────────────────────── -->
+  <section id="section-upload" class="section">
+    <div class="section-header">
+      <h2 class="section-title">📁 Batch CSV Upload</h2>
+      <p class="section-desc">Upload a CSV with post features to get bulk predictions and visualizations.</p>
+    </div>
+
+    <div class="upload-zone" id="uploadZone"
+         ondragover="event.preventDefault(); this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleDrop(event)">
+      <div class="upload-icon">☁️</div>
+      <p class="upload-title">Drag & drop your CSV here</p>
+      <p class="upload-sub">or</p>
+      <label for="fileInput" class="btn btn-outline">Browse File</label>
+      <input type="file" id="fileInput" accept=".csv" style="display:none;" onchange="handleFileSelect(event)" />
+      <p class="upload-hint">Required columns: likes, comments, shares, saves, hashtag_count, post_type, hour_of_day, day_of_week, follower_count, account_age_days</p>
+    </div>
+
+    <div id="uploadStatus" style="display:none;" class="upload-progress">
+      <div class="spinner"></div>
+      <span id="uploadStatusText">Processing…</span>
+    </div>
+
+    <!-- Predictions table -->
+    <div id="tableContainer" style="display:none;" class="table-wrapper">
+      <div class="table-header">
+        <h3>Prediction Results</h3>
+        <span id="tableCount" class="badge badge-blue"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="resultsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Predicted Reach</th>
+              <th>Tier</th>
+              <th>Confidence</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section: Charts ─────────────────────────────────────── -->
+  <section id="section-charts" class="section">
+    <div class="section-header">
+      <h2 class="section-title">📈 Analytics & Visualizations</h2>
+      <p class="section-desc">Interactive charts rendered from your uploaded data.</p>
+    </div>
+
+    <div class="charts-grid">
+      <!-- Chart 1: Predicted vs Actual Scatter -->
+      <div class="chart-card" id="chartCard1">
+        <div class="chart-title">Predicted Reach Distribution</div>
+        <div class="chart-subtitle">Histogram of predicted reach values</div>
+        <div class="chart-container">
+          <canvas id="scatterChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Feature Importance -->
+      <div class="chart-card" id="chartCard2">
+        <div class="chart-title">Feature Importance</div>
+        <div class="chart-subtitle">Random Forest Gini importance scores</div>
+        <div class="chart-container">
+          <canvas id="featureChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Reach Tier Pie -->
+      <div class="chart-card chart-card--full" id="chartCard3">
+        <div class="chart-title">Reach Tier Distribution</div>
+        <div class="chart-subtitle">Proportion of low / medium / high reach posts</div>
+        <div class="chart-container chart-container--sm">
+          <canvas id="tierChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-placeholder" id="chartPlaceholder">
+      <div class="placeholder-icon">📊</div>
+      <p>Upload a CSV to generate charts</p>
+    </div>
+  </section>
+
+  <!-- ── Section: Model Metrics ──────────────────────────────── -->
+  <section id="section-metrics" class="section">
+    <div class="section-header">
+      <h2 class="section-title">🏆 Model Metrics</h2>
+      <p class="section-desc">Latest training run performance from the metrics log.</p>
+    </div>
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="metric-card">
+        <div class="metric-label">R² Score</div>
+        <div class="metric-value" id="metric-r2">—</div>
+        <div class="metric-target">Target ≥ 0.75</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">MAE</div>
+        <div class="metric-value" id="metric-mae">—</div>
+        <div class="metric-target">Regression error</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Accuracy</div>
+        <div class="metric-value" id="metric-acc">—</div>
+        <div class="metric-target">Target ≥ 0.80</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Strategy</div>
+        <div class="metric-value metric-value--sm" id="metric-strat">—</div>
+        <div class="metric-target">Preprocessing</div>
+      </div>
+    </div>
+    <button class="btn btn-outline" onclick="loadMetrics()" style="margin-top:1rem;">
+      🔄 Refresh Metrics
+    </button>
+  </section>
+
+</main>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
